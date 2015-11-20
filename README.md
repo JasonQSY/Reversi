@@ -7,13 +7,13 @@ About the rule of reversi, you can refer to wikipedia for help.
 
 It is just a simple game.
 
-In particular, you can read the comment and try to use AI2.
+In particular, you can read the comment and try to use AI_2.
 
-Actually, it is easy to make a Player vs. AI and AI1 vd. AI2 mode.
+Actually, it is easy to make a Player vs. AI and AI vs. AI_2 mode.
 
 Problems can be fixed: (I do not know if I have time to fix it)
 
-  a. The AI may be a bit stupid although AI1 is better than AI2. I cannot decide that the position or the chess AI can eat is more important.
+  a. The AI may be a bit stupid although AI is better than AI_2. I cannot decide that the position or the chess AI can eat is more important.
   
   b. No GUI (However, I do not want a gui here).
   
