@@ -17,6 +17,6 @@ Problems can be fixed: (I do not know if I have time to fix it)
   
   b. No GUI (However, I do not want a gui here).
   
-  c. The line of code is too long.\\
+  c. The line of code is too long.
   
 However, I enjoy it and hope you can enjoy it.
