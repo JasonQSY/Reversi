@@ -1,0 +1,627 @@
+#include <stdio.h>
+#include <string.h>
+#define SIZE 8
+
+void board_reset(char game[SIZE][SIZE]);//reset the board
+void board_print(char game[SIZE][SIZE]);//input game and show the board for player
+void getvalid(char game[SIZE][SIZE],int validlist[SIZE][SIZE],int mychess);//O-0,X-1
+int checkvalid(int validlist[SIZE][SIZE]);
+void player_move(char game[SIZE][SIZE],int validlist[SIZE][SIZE]);
+void computer_move(char game[SIZE][SIZE],int validlist[SIZE][SIZE]);
+void computer2_move(char game[SIZE][SIZE],int validlist[SIZE][SIZE]);
+void eat_chess(char game[SIZE][SIZE],int x,int y,int mychess);//O-0,X-1
+void score_print(char game[SIZE][SIZE]);//print the final score
+
+int upperleft=0,upperright=0,bottomleft=0,bottomright=0;
+int main() {
+    char game[SIZE][SIZE];//save the game
+    int validlist[SIZE][SIZE];//0 means invalid, number means it can eat how many chesses.
+    int i,player,computer;//i for loop, player and computer are bool type(0 or 1)
+    char over; //game over
+    
+    while (1)
+    {
+        /* initialize game and validlist */
+        board_reset(game);
+        getvalid(game,validlist,0);
+        
+        /* start a reversi game */
+        printf("REVERSI\n\n");
+        printf("You can go first on the first game, then we will take turns.\nYou will be white - (O)\nI will be black - (X).\nSelect a square for your move by typing a digit for the row\nand a letter for the column with no spaces between.\n\nGood luck! Press Enter to start.\n");
+        getchar();
+        board_print(game);
+        
+        /*play the game*/
+        for (i=1; i<=100; i++) {
+            /* It is the turn of player*/
+            getvalid(game,validlist,0);
+            player=checkvalid(validlist);
+            if (player==1) {
+                player_move(game,validlist);
+                //computer2_move(game, validlist);//AI vs AI
+                board_print(game);
+                //getchar(); //AI vs AI
+            }
+            else{
+                getvalid(game,validlist,1);
+                computer=checkvalid(validlist);
+                if (computer==0) {
+                    score_print(game);
+                    break;
+                }
+                else{
+                    printf("You have to skip the step.\n");
+                    getchar();
+                }
+            }
+            /* It is the turn of computer */
+            getvalid(game,validlist,1);
+            computer=checkvalid(validlist);
+            if (computer==1) {
+                computer_move(game, validlist);
+                board_print(game);
+                //getchar(); //AI vs AI
+            }
+            else{
+                getvalid(game,validlist,0);
+                player=checkvalid(validlist);
+                if (player==0) {
+                    score_print(game);
+                    break;
+                }
+                else{
+                    printf("The computer have to skip the step.\n");
+                }
+
+            }
+            
+        }
+        printf("Do you want to play again (y/n)?");
+        scanf("%c",&over);
+        if (over=='n') {
+            break;
+        }
+        
+    }
+    return 0;
+}
+void board_reset(char game[SIZE][SIZE]){
+    int i,j;
+    
+    for (i=0; i<SIZE; i++) {
+        for (j=0; j<SIZE; j++) {
+            game[i][j]=' ';
+        }
+    }
+    game[3][3]='O';
+    game[3][4]='X';
+    game[4][3]='X';
+    game[4][4]='O';
+}
+void board_print(char game[SIZE][SIZE])
+{
+    char alphabet[100]="   a   b   c   d   e   f   g   h";
+    char boundary[100]=" +---+---+---+---+---+---+---+---+";
+    int i=0,j=0;// i symbolize the number of row
+    
+    for (i=0; i<=2*SIZE+1; i++) {
+        if (i==0) {printf("%s\n",alphabet);}
+        else{
+            if (i%2==1) {printf("%s\n",boundary);}
+            else
+            {
+                printf("%d",i/2);
+                for (j=0; j<=SIZE*2; j++) {
+                    if (j%2==0) {printf("|");}
+                    else{printf(" %c ",game[i/2-1][j/2]);}
+                }
+                printf("\n");
+            }
+        }
+    }
+}
+void score_print(char game[SIZE][SIZE]){
+    int i,j;//for loop
+    int computer=0,user=0;
+    
+    for (i=0; i<SIZE; i++) {
+        for (j=0; j<SIZE; j++) {
+            if (game[i][j]=='X') {
+                computer++;
+            }
+            else if(game[i][j]=='O'){
+                user++;
+            }
+        }
+    }
+    printf("The final score is:\n");
+    printf("Computer\t%d\n",computer);
+    printf("User\t\t%d\n\n",user);
+    if (computer>user) {
+        printf("A sad story. You lose.\n\n");}
+    else if (computer<user){
+        printf("Congratulations! You win.\n\n");
+    }
+    else{
+        printf("Balance in Equal.\n\n");
+    }
+}
+void getvalid(char game[SIZE][SIZE],int validlist[SIZE][SIZE],int mychess){
+    char same = '\0',oppo = '\0';
+    int i=0,j=0,dev=0,devdata[8];
+    
+    if (mychess==1) {
+        same='X';
+        oppo='O';
+    }
+    else if(mychess==0)
+    {
+        same='O';
+        oppo='X';
+    }
+    /*initialize the validlist */
+    for (i=0; i<8; i++) {
+        for (j=0; j<8; j++) {
+            validlist[i][j]=0;
+        }
+    }
+    /* check every position and every direction */
+    for (i=0; i<8; i++) {
+        for (j=0; j<8; j++) {
+            if (game[i][j]==' ') {
+                devdata[0]=0;
+                devdata[1]=0;
+                devdata[2]=0;
+                devdata[3]=0;
+                devdata[4]=0;
+                devdata[5]=0;
+                devdata[6]=0;
+                devdata[7]=0;
+                /* check upper */
+                if (i>=2) {
+                for (dev=1; dev<=i-1; dev++) {
+                    if (game[i-dev][j]==' ') {break;}
+                    if (dev==1 & game[i-dev][j]==same) {break;}
+                    if (game[i-dev][j]==oppo) {
+                        if (game[i-dev-1][j]==same) {
+                            devdata[0]=dev;
+                            break;
+                        }
+                    }
+                }
+                }
+                /* check bottom */
+                if (i<=5) {
+                for (dev=1; dev<=SIZE-i-2; dev++) {
+                    if (game[i+dev][j]==' ') {break;}
+                    if (dev==1 & game[i+dev][j]==same) {break;}
+                    if (game[i+dev][j]==oppo) {
+                        if (game[i+dev+1][j]==same) {
+                            devdata[1]=dev;
+                            break;
+                        }
+                    }
+                }
+                }
+                /* check left */
+                if (j>=2) {
+                for (dev=1; dev<=j-1; dev++) {
+                    if (game[i][j-dev]==' ') {break;}
+                    if (dev==1 & game[i][j-dev]==same) {break;}
+                    if (game[i][j-dev]==oppo) {
+                        if (game[i][j-dev-1]==same) {
+                            devdata[2]=dev;
+                            break;
+                        }
+                    }
+                }
+                }
+                /* check right */
+                if (j<=5) {
+                for (dev=1; dev<=SIZE-j-2; dev++) {
+                    if (game[i][j+dev]==' ') {break;}
+                    if (dev==1 & game[i][j+dev]==same) {break;}
+                    if (game[i][j+dev]==oppo) {
+                        if (game[i][j+dev+1]==same) {
+                            devdata[3]=dev;
+                            break;
+                        }
+                    }
+                }
+                }
+                /* check upper-left */
+                if (i>=2 & j>=2) {
+                for (dev=1; dev<=i-1 & dev<=j-1; dev++) {
+                    if (game[i-dev][j-dev]==' ') {break;}
+                    if (dev==1 & game[i-dev][j-dev]==same) {break;}
+                    if (game[i-dev][j-dev]==oppo) {
+                        if (game[i-dev-1][j-dev-1]==same) {
+                            devdata[4]=dev;
+                            break;
+                        }
+                    }
+                }
+                }
+                /* check upper-right */
+                if (i>=2 & j<=5) {
+                for (dev=1; dev<=i-1 & dev<=SIZE-2-j; dev++) {
+                    if (game[i-dev][j+dev]==' ') {break;}
+                    if (dev==1 & game[i-dev][j+dev]==same) {break;}
+                    if (game[i-dev][j+dev]==oppo) {
+                        if (game[i-dev-1][j+dev+1]==same) {
+                            devdata[5]=dev;
+                            break;
+                        }
+                    }
+                }
+                }
+                /* check bottom-left */
+                if (i<=5 & j>=2) {
+                for (dev=1; dev<=SIZE-2-i & dev<=j-1; dev++) {
+                    if (game[i+dev][j-dev]==' ') {break;}
+                    if (dev==1 & game[i+dev][j-dev]==same) {break;}
+                    if (game[i+dev][j-dev]==oppo) {
+                        if (game[i+dev+1][j-dev-1]==same) {
+                            devdata[6]=dev;
+                            break;
+                        }
+                    }
+                }
+                }
+                /* check bottom-right */
+                if (i<=5 & j<=5) {
+                for (dev=1; dev<=SIZE-2-i & dev<=SIZE-2-j; dev++) {
+                    if (game[i+dev][j+dev]==' ') {break;}
+                    if (dev==1 & game[i+dev][j+dev]==same) {break;}
+                    if (game[i+dev][j+dev]==oppo) {
+                        if (game[i+dev+1][j+dev+1]==same) {
+                            devdata[7]=dev;
+                            break;
+                        }
+                    }
+                }
+                }
+                /* sum */
+                validlist[i][j]=devdata[0]+devdata[1]+devdata[2]+devdata[3]+devdata[4]+devdata[5]+devdata[6]+devdata[7];
+            }
+        }
+    }
+}
+void player_move(char game[SIZE][SIZE],int validlist[SIZE][SIZE]){
+    char input[30];
+    int valid=0;
+    int x=-1,y=-1;
+    
+    /* input the position */
+    printf("Please enter your move (row column- no space):");
+    gets(input);
+    /* check if the input is valid or not */
+    valid=0;
+    if (input[0]>='1' &input[0]<='8') {
+        if (input[1]>='a' &input[0]<='h') {
+            if (input[2]==0) {
+                valid=1;
+            }
+        }
+    }
+    if (valid==0) {
+        printf("Not a valid move, try again.\n");
+        player_move(game, validlist);
+        return;
+    }
+    /* check the position is valid or not */
+    valid=0;
+    x=(int)(input[0]-'0'-1);
+    switch (input[1]) {
+        case 'a':{y=0;break;}
+        case 'b':{y=1;break;}
+        case 'c':{y=2;break;}
+        case 'd':{y=3;break;}
+        case 'e':{y=4;break;}
+        case 'f':{y=5;break;}
+        case 'g':{y=6;break;}
+        case 'h':{y=7;break;}
+    }
+    if (validlist[x][y]>0) {
+        valid=1;
+    }
+    if (valid==0) {
+        printf("Not a valid move, try again.\n");
+        player_move(game, validlist);
+        return;
+    }
+    /* move the chess */
+    game[x][y]='O';
+    eat_chess(game, x, y,0);
+    
+    return;
+}
+int checkvalid(int validlist[SIZE][SIZE])
+{
+    int i,j,sum=0;
+    
+    for (i=0; i<8; i++) {
+        for (j=0; j<8; j++) {
+            if (validlist[i][j]!=0) {
+                sum++;
+            }
+        }
+    }
+    if (sum==0) {
+        return 0;
+    }
+    return 1;
+}
+void computer_move(char game[SIZE][SIZE],int validlist[SIZE][SIZE])
+{
+    int i,j,x=-1,y=-1,eat=0;
+    
+    for (i=0; i<8; i++)
+    {
+        for (j=0; j<8; j++)
+        {
+            if (validlist[i][j]!=0)
+            {
+                /* four vertices */
+                if (((i==0)|(i==7)) & ((j==0)|(j==7))) {
+                    if (i==0&j==0) {
+                        upperleft=1;
+                    }
+                    else if(i==7 & j==0){
+                        bottomleft=1;
+                    }
+                    else if (i==0 & j==7){
+                        upperright=1;
+                    }
+                    else if (i==7 & j==7){
+                        bottomright=1;
+                    }
+                    game[i][j]='X';
+                    eat_chess(game, i, j, 1);
+                    return;
+                }
+                /* good points near the forbbiden ones */
+                if ((i==2&j==0)|(i==0&j==2)|(i==5&j==0)|(i==7&j==2)|(i==0&j==5)|(i==2&j==7)|(i==7&j==5)|(i==5&j==7)) {
+                    game[i][j]='X';
+                    eat_chess(game, i, j, 1);
+                    return;
+                }
+                /* ordinary points */
+                if (upperleft==1) {
+                    if ((i==0&j==1)|(i==1&j==1)|(i==0&j==1)) {
+                        game[i][j]='X';
+                        eat_chess(game, i, j, 1);
+                        return;
+                    }
+                }
+                if (bottomleft==1) {
+                    if ((i==6&j==0)|(i==6&j==1)|(i==7&j==1)) {
+                        game[i][j]='X';
+                        eat_chess(game, i, j, 1);
+                        return;
+                    }
+                }
+                if (upperright==1) {
+                    if ((i==0&j==6)|(i==1&j==6)|(i==1&j==7)) {
+                        game[i][j]='X';
+                        eat_chess(game, i, j, 1);
+                        return;
+                    }
+                }
+                if (bottomright==1) {
+                    if ((i==6&j==7)|(i==6&j==6)|(i==7&j==6)) {
+                        game[i][j]='X';
+                        eat_chess(game, i, j, 1);
+                        return;
+                    }
+                }
+                if ((i==0&j==1)|(i==1&j==1)|(i==0&j==1)|(i==6&j==0)|(i==6&j==1)|(i==7&j==1)|(i==0&j==6)|(i==1&j==6)|(i==1&j==7)|(i==6&j==7)|(i==6&j==6)|(i==7&j==6)) {
+                    ;
+                }
+                else if (validlist[i][j]>eat) {
+                    eat=validlist[i][j];
+                    x=i;
+                    y=j;
+                }
+            }
+        }
+    }
+    /* if there is no ordinary points */
+    if (x==-1) {
+        for (i=0; i<8; i++) {
+            for(j=0;j<8;j++){
+                if (validlist[i][j]>eat) {
+                    eat=validlist[i][j];
+                    x=i;
+                    y=j;
+                }
+            }
+        }
+    }
+    game[x][y]='X';
+    eat_chess(game, x, y,1);
+}
+/* another AI that can be used in AI vs. AI model (a bit weaker than 1) */
+void computer2_move(char game[SIZE][SIZE],int validlist[SIZE][SIZE]){
+    int i=0,j=0,x=-1,y=-1,eat=0,max=0;
+    char same = '\0',oppo = '\0';
+    int newvalidlist[SIZE][SIZE];
+    char newgame[SIZE][SIZE];
+    
+    same='O';oppo='X';
+    for (i=0; i<8; i++) {
+        for (j=0; j<8; j++) {
+            newgame[i][j]=game[i][j];
+            newvalidlist[i][j]=validlist[i][j];
+        }
+    }
+    if (((i==0)|(i==7)) & ((j==0)|(j==7))) {
+        x=i;y=j;
+    }
+    else{
+        for(i=0;i<8;i++)
+        {
+            for(j=0;j<8;j++){
+                if (validlist[i][j]>eat) {
+                    eat=validlist[i][j];
+                    x=i;
+                    y=j;
+                }
+            }
+        }
+        max=eat;eat=0;
+        newgame[x][y]='X';
+        eat_chess(newgame, x, y,1);
+        getvalid(newgame,newvalidlist,oppo);
+        if (newvalidlist[0][0]!=0 |newvalidlist[0][7]!=0 |newvalidlist[7][0]!=0|newvalidlist[7][7]!=0) {
+            for(i=0;i<8;i++)
+            {
+                for(j=0;j<8;j++){
+                    if (validlist[i][j]>eat&validlist[i][j]<max) {
+                        eat=validlist[i][j];
+                        x=i;
+                        y=j;
+                    }
+                }
+            }
+        }
+    }
+    game[x][y]='O';
+    eat_chess(game, x, y,0);
+}
+void eat_chess(char game[SIZE][SIZE],int x,int y,int mychess){
+    char same = '\0',oppo = '\0';
+    int dev,i;
+    
+    /* confirm the purpose */
+    if (mychess==1) {
+        same='X';
+        oppo='O';
+    }
+    else if(mychess==0)
+    {
+        same='O';
+        oppo='X';
+    }
+    /* check upper */
+    if (x>=2) {
+        for (dev=1; dev<=x-1; dev++) {
+            if (game[x-dev][y]==' ') {break;}
+            if (dev==1 & game[x-dev][y]==same) {break;}
+            if (game[x-dev][y]==oppo) {
+                if (game[x-dev-1][y]==same) {
+                    for (i=1; i<=dev; i++) {
+                        game[x-i][y]=same;
+                    }
+                    break;
+                }
+            }
+        }
+        
+    }
+    /* check bottom */
+    if (x<=5) {
+        for (dev=1; dev<=SIZE-x-2; dev++) {
+            if (game[x+dev][y]==' ') {break;}
+            if (dev==1 & game[x+dev][y]==same) {break;}
+            if (game[x+dev][y]==oppo) {
+                if (game[x+dev+1][y]==same) {
+                    for (i=1; i<=dev; i++) {
+                        game[x+i][y]=same;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    /* check left */
+    if (y>=2) {
+        for (dev=1; dev<=y-1; dev++) {
+            if (game[x][y-dev]==' ') {break;}
+            if (dev==1 & game[x][y-dev]==same) {break;}
+            if (game[x][y-dev]==oppo) {
+                if (game[x][y-dev-1]==same) {
+                    for (i=1; i<=dev; i++) {
+                        game[x][y-i]=same;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    /* check right */
+    if (y<=5) {
+        for (dev=1; dev<=SIZE-y-2; dev++) {
+            if (game[x][y+dev]==' ') {break;}
+            if (dev==1 & game[x][y+dev]==same) {break;}
+            if (game[x][y+dev]==oppo) {
+                if (game[x][y+dev+1]==same) {
+                    for (i=1; i<=dev; i++) {
+                        game[x][y+i]=same;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    /* check upper-left */
+    if (x>=2 & y>=2) {
+        for (dev=1; dev<=x-1 & dev<=y-1; dev++) {
+            if (game[x-dev][y-dev]==' ') {break;}
+            if (dev==1 & game[x-dev][y-dev]==same) {break;}
+            if (game[x-dev][y-dev]==oppo) {
+                if (game[x-dev-1][y-dev-1]==same) {
+                    for (i=1; i<=dev; i++) {
+                        game[x-i][y-i]=same;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    /* check upper-right */
+    if (x>=2 & y<=5) {
+        for (dev=1; dev<=x-1 & dev<=SIZE-2-y; dev++) {
+            if (game[x-dev][y+dev]==' ') {break;}
+            if (dev==1 & game[x-dev][y+dev]==same) {break;}
+            if (game[x-dev][y+dev]==oppo) {
+                if (game[x-dev-1][y+dev+1]==same) {
+                    for (i=1; i<=dev; i++) {
+                        game[x-i][y+i]=same;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    /* check bottom-left */
+    if (x<=5 & y>=2) {
+        for (dev=1; dev<=SIZE-2-x & dev<=y-1; dev++) {
+            if (game[x+dev][y-dev]==' ') {break;}
+            if (dev==1 & game[x+dev][y-dev]==same) {break;}
+            if (game[x+dev][y-dev]==oppo) {
+                if (game[x+dev+1][y-dev-1]==same) {
+                    for (i=1; i<=dev; i++) {
+                        game[x+i][y-i]=same;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    /* check bottom-right */
+    if (x<=5 & y<=5) {
+        for (dev=1; dev<=SIZE-2-x & dev<=SIZE-2-y; dev++) {
+            if (game[x+dev][y+dev]==' ') {break;}
+            if (dev==1 & game[x+dev][y+dev]==same) {break;}
+            if (game[x+dev][y+dev]==oppo) {
+                if (game[x+dev+1][y+dev+1]==same) {
+                    for (i=1; i<=dev; i++) {
+                        game[x+i][y+i]=same;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}
