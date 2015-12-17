@@ -1,5 +1,5 @@
 ## Reversi
-- A reverse game written by C in my vg101 class (Intro to computer and programming).
+- A reverse game written by C.
 - Just compile and run it, it will tell you how to use it before the game.
 - About the rule of reversi, you can refer to wikipedia for help.
 - In particular, you can read the comment and try to use AI2.
